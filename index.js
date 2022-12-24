@@ -103,6 +103,49 @@ app.post('/reports', async (req, res) => {
 	const result = await reportsCollections.insertOne(report)
 	res.send(result)
 })
+app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+	const email = req.query.email;
+	const decodedEmail = req.decoded.email;
+	if (email !== decodedEmail) {
+		return res.status(403).send({ message: 'forbidden access' });
+	}
+	const result = await usersCollections.find({}).toArray()
+	res.send(result)
+})
+
+app.get('/user/:email', verifyJWT, async (req, res) => {
+	const email = req.params.email
+	const query = { email: email }
+	const result = await usersCollections.findOne(query)
+	res.send(result)
+})
+app.put('/users/:email', verifyJWT, verifyAdmin, async (req, res) => {
+	const email = req.params.email
+	if (email) {
+		const sellerVerified = { email: email }
+		const query = { sellerEmail: email }
+		const options = { upsert: true }
+		const updateDoc = {
+			$set: {
+				verified: 'true',
+			}
+		}
+		const seller = await usersCollections.updateOne(sellerVerified, updateDoc, options)
+		const result = await furnitureCollections.updateMany(query, updateDoc, options)
+		res.send(result)
+	}
+})
+app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+	const { id } = req.params
+	const email = req.query.email
+	const query = { _id: ObjectId(id) }
+	const user = await usersCollections.findOne(query)
+	if (user.email === email || user.role === 'Admin' || user.email === 'nurul.cse7@gmail.com') {
+		return res.send({ message: "You Can't delete admin but Owner Can delete everything" })
+	}
+	const result = await usersCollections.deleteOne(query)
+	res.send(result)
+})
 
 // =============  All User API (Stop here)  ====================]
 
