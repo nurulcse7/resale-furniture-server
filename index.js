@@ -60,6 +60,13 @@ async function run() {
 		const result = await furnitureCollections.updateOne(query, updateDoc, options)
 		res.send(result)
 	})
+	// verifyJWT, verifyAdmin,
+	app.delete('/furnitures/:id',  async (req, res) => {
+		const id = req.params.id
+		const query = { _id: ObjectId(id) }
+		const result = await furnitureCollections.deleteOne(query)
+		res.send(result)
+	})
 	
 
 	// ============  All furniture API (Stop here)  ====================
