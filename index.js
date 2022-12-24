@@ -24,7 +24,7 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-// verify buyer 
+// verify buyer Middleware
 const verifyBuyer = async (req, res, next) => {
 	const decodedEmail = req.decoded.email
 	const query = { email: decodedEmail }
@@ -35,6 +35,28 @@ const verifyBuyer = async (req, res, next) => {
 	}
 	next()
 } 
+// verify seller  Middleware
+const verifySeller = async (req, res, next) => {
+	const decodedEmail = req.decoded.email
+	const query = { email: decodedEmail }
+	const user = await usersCollections.findOne(query)
+
+	if (user?.role !== 'seller') {
+		return res.status(403).send({ message: 'forbidden access' })
+	}
+	next()
+}
+// verify admin Middleware
+const verifyAdmin = async (req, res, next) => {
+	const decodedEmail = req.decoded.email
+	const query = { email: decodedEmail }
+	const user = await usersCollections.findOne(query)
+
+	if (user?.role !== 'Admin') {
+		return res.status(403).send({ message: 'forbidden access' })
+	}
+	next()
+}
 
 // JWT Middleware
 function verifyJWT(req, res, next) {
@@ -221,6 +243,12 @@ app.delete('/orders/:id', verifyJWT, async (req, res) => {
 	const result = await ordersCollections.deleteOne(query)
 	res.send(result)
 })
+app.get('/singleOrder/:id', async (req, res) => {
+	const id = req.params.id
+	const query = { _id: ObjectId(id) }
+	const result = await ordersCollections.findOne(query)
+	res.send(result)
+})
 // =============  All Order API (Stop here)  ====================]
                      // ------- //
 
@@ -247,12 +275,51 @@ app.get('/users/buyer/:email', async (req, res) => {
                      // ------- //
 
 
+// [ =============  All Seller API (Start here)  ==================
+app.get('/users/sellers', verifyJWT, verifyAdmin, async (req, res) => {
+	const email = req.query.email;
+	const decodedEmail = req.decoded.email;
+	if (email !== decodedEmail) {
+		return res.status(403).send({ message: 'forbidden access' });
+	}
+	const sellers = await usersCollections.find({}).toArray()
+	const seller = sellers.filter(seller => seller.role === 'seller')
+	res.send(seller)
+})
+app.get('/users/seller/:email', async (req, res) => {
+	const email = req.params.email;
+	const query = { email }
+	const user = await usersCollections.findOne(query);
+	res.send({ isSeller: user?.role === 'seller' });
+})
+app.get('/furnitures/seller/:email', verifyJWT, verifySeller, async (req, res) => {
+	const email = req.params.email
+	const query = { sellerEmail: email }
+	const result = await furnitureCollections.find(query).toArray()
+	res.send(result)
+})
+app.delete('/furnitures/seller/:id', verifyJWT, verifySeller, async (req, res) => {
+	const { id } = req.params
+	const query = { _id: ObjectId(id) }
+	const result = await furnitureCollections.deleteOne(query)
+	res.send(result)
+})
+// =============  All Seller API (Stop here)  ====================]
+                    // ------- //
+
+
+// [ =============  All Admin API (Start here)  ==================
+
+// =============  All Admin API (Stop here)  ====================]
+                    // ------- //
+
+
 
 
 // [ =============  All B API (Start here)  ==================
 
 // =============  All B API (Stop here)  ====================]
-                            // ------- //
+                    // ------- //
 
 }
 run().catch(err => {
