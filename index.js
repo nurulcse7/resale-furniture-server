@@ -28,11 +28,39 @@ const client = new MongoClient(uri, {
 async function run() {
 	const furnitureCollections = client.db('furnitureCollection').collection('furnitures')
 
+
+	// ============  All furniture API (Start here)  ====================
+	app.post('/furnitures', async (req, res) => {
+		const product = req.body
+		const result = await furnitureCollections.insertOne(product)
+		res.send(result)
+	})
+
+	app.get("/furnitures", async (req, res) => {
+		const query = {}
+		const result = await furnitureCollections.find(query).toArray()
+		res.send(result)
+	})
+	app.get('/furnitures/:id', async (req, res) => {
+		const { id } = req.params
+		const query = { _id: ObjectId(id) }
+		const result = await furnitureCollections.findOne(query)
+		res.send(result)
+	})
+
+	
+	// ============  All furniture API (Stop here)  ====================
+
+
+	// =============  All Categories API (Start here)  ====================
 	app.get('/categories', async (req, res) => {
 		const query = {}
 		const result = await furnitureCollections.find(query).toArray()
 		res.send(result)
 	})
+	// =============  All Categories API (Stop here)  ====================
+
+
 }
 run().catch(err => {
 	console.log(err);
