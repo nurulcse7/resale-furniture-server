@@ -47,8 +47,21 @@ async function run() {
 		const result = await furnitureCollections.findOne(query)
 		res.send(result)
 	})
-
+	app.put('/furnitures/:id', async (req, res) => {
+		const { id } = req.params
+		const Status = req.body
+		const query = { _id: ObjectId(id) }
+		const options = { upsert: true }
+		const updateDoc = {
+			$set: {
+				Status: Status?.Status,
+			}
+		}
+		const result = await furnitureCollections.updateOne(query, updateDoc, options)
+		res.send(result)
+	})
 	
+
 	// ============  All furniture API (Stop here)  ====================
 
 
