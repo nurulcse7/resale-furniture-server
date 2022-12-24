@@ -24,6 +24,18 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// verify buyer 
+const verifyBuyer = async (req, res, next) => {
+	const decodedEmail = req.decoded.email
+	const query = { email: decodedEmail }
+	const user = await usersCollections.findOne(query)
+
+	if (user?.role !== 'buyer') {
+		return res.status(403).send({ message: 'forbidden access' })
+	}
+	next()
+} 
+
 // JWT Middleware
 function verifyJWT(req, res, next) {
 	const authHeader = req.headers.authorization
@@ -210,7 +222,29 @@ app.delete('/orders/:id', verifyJWT, async (req, res) => {
 	res.send(result)
 })
 // =============  All Order API (Stop here)  ====================]
-                            // ------- //
+                     // ------- //
+
+
+// [ =============  All Buyer API (Start here)  ==================
+app.get('/users/buyers', verifyJWT, verifyAdmin, async (req, res) => {
+	const email = req.query.email;
+	const decodedEmail = req.decoded.email;
+	if (email !== decodedEmail) {
+		return res.status(403).send({ message: 'forbidden access' });
+	}
+	const sellers = await usersCollections.find({}).toArray()
+	const seller = sellers.filter(seller => seller.role === 'buyer')
+	res.send(seller)
+})
+app.get('/users/buyer/:email', async (req, res) => {
+	const email = req.params.email;
+	const query = { email }
+	const user = await usersCollections.findOne(query);
+	res.send({ isBuyer: user?.role === 'buyer' });
+})
+
+// =============  All Buyer API (Stop here)  ====================]
+                     // ------- //
 
 
 
