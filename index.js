@@ -375,12 +375,13 @@ app.delete('/reports/:id', verifyJWT, verifyAdmin, async (req, res) => {
 // =============  All Report API (Stop here)  ====================]
                     // ------- //
 
-					
-
-
-// [ =============  All B API (Start here)  ==================
-
-// =============  All B API (Stop here)  ====================]
+// [ =============  All Advertisement API (Start here)  ==================
+app.get('/advertiseFurnitures', async (req, res) => {
+	const furnitures = await furnitureCollections.find({}).toArray()
+	const filter = furnitures.filter(furniture => furniture.Status === 'Approved')
+	res.send(filter)
+})
+// =============  All Advertisement API (Stop here)  ====================]
                     // ------- //
 
 					
