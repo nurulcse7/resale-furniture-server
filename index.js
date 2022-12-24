@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
@@ -78,6 +79,8 @@ async function run() {
 	const furnitureCollections = client.db('furnitureCollection').collection('furnitures')
 	const usersCollections = client.db('furnitureCollection').collection('users')
 	const ordersCollections = client.db('furnitureCollection').collection('orders')
+	const reportsCollections = client.db('furnitureCollection').collection('reports')
+	const paymentsCollection = client.db('furnitureCollection').collection('payments')
 
 	app.get('/jwt', async (req, res) => {
 		const email = req.query.email;
@@ -309,17 +312,61 @@ app.delete('/furnitures/seller/:id', verifyJWT, verifySeller, async (req, res) =
 
 
 // [ =============  All Admin API (Start here)  ==================
-
+app.get('/users/admin/:email', async (req, res) => {
+	const email = req.params.email;
+	const query = { email }
+	const user = await usersCollections.findOne(query);
+	res.send({ isAdmin: user?.role === 'Admin' });
+})
 // =============  All Admin API (Stop here)  ====================]
                     // ------- //
 
 
+// [ =============  All Payment API (Start here)  ==================
+app.post("/create-payment-intent", async (req, res) => {
+	const order = req.body;
+	// console.log(order);
+	const price = order.price;
+	const amount = price * 100;
+	// console.log(price);
+	const paymentIntent = await stripe.paymentIntents.create({
+		currency: "usd",
+		amount: amount,
+		payment_method_types: ["card"],
+	});
+	res.send({
+		clientSecret: paymentIntent.client_secret,
+	});
+});
+
+app.post("/payments", async (req, res) => {
+	const payment = req.body;
+	const result = await paymentsCollection.insertOne(payment);
+	const id = payment.order;
+	const filter = { _id: ObjectId(id) };
+	const updatedDoc = {
+		$set: {
+			paid: true,
+			transactionId: payment.transactionId,
+		},
+	};
+	const updatedResult = await ordersCollections.updateOne(
+		filter,
+		updatedDoc
+	);
+	res.send(result);
+});
+// =============  All Payment API (Stop here)  ====================]
+                    // ------- //
+			
+					
 
 
 // [ =============  All B API (Start here)  ==================
 
 // =============  All B API (Stop here)  ====================]
                     // ------- //
+
 
 }
 run().catch(err => {
