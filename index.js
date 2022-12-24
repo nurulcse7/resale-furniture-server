@@ -359,6 +359,30 @@ app.post("/payments", async (req, res) => {
 // =============  All Payment API (Stop here)  ====================]
                     // ------- //
 			
+
+// [ =============  All Report API (Start here)  ==================
+app.get('/reports', verifyJWT, verifyAdmin, async (req, res) => {
+	const query = {}
+	const result = await reportsCollections.find(query).toArray()
+	res.send(result)
+})
+app.delete('/reports/:id', verifyJWT, verifyAdmin, async (req, res) => {
+	const { id } = req.params
+	const query = { _id: ObjectId(id) }
+	const result = await reportsCollections.deleteOne(query)
+	res.send(result)
+})
+// =============  All Report API (Stop here)  ====================]
+                    // ------- //
+
+					
+
+
+// [ =============  All B API (Start here)  ==================
+
+// =============  All B API (Stop here)  ====================]
+                    // ------- //
+
 					
 
 
