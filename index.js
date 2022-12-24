@@ -24,12 +24,37 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// JWT Middleware
+function verifyJWT(req, res, next) {
+	const authHeader = req.headers.authorization
+	if (!authHeader) {
+		return res.status(401).send('unAuthorized')
+	}
+	const token = authHeader.split(' ')[1]
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+		if (err) {
+			return res.status(403).send({ message: "forbidden access" })
+		}
+		req.decoded = decoded
+		next()
+	})
+}
 
 async function run() {
 	const furnitureCollections = client.db('furnitureCollection').collection('furnitures')
 	const usersCollections = client.db('furnitureCollection').collection('users')
 	const ordersCollections = client.db('furnitureCollection').collection('orders')
 
+	app.get('/jwt', async (req, res) => {
+		const email = req.query.email;
+		const query = { email: email };
+		const user = await usersCollections.findOne(query);
+		if (user) {
+			const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5d' })
+			return res.send({ accessToken: token });
+		}
+		res.status(403).send({ accessToken: '' })
+	});
 
 	// [============  All furniture API (Start here)  ====================
 	app.post('/furnitures', async (req, res) => {
@@ -151,6 +176,26 @@ app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
 
 
 // [ =============  All Order API (Start here)  ==================
+app.post('/orders', async (req, res) => {
+	const checkSellerEmail = req.query.email
+	const order = req.body
+	const query = {
+		productId: order.productId,
+		productImage: order.productImage
+	}
+	const checkSeller = { sellerEmail: order?.buyerEmail }
+	const seller = await furnitureCollections.findOne(checkSeller)
+	if (checkSellerEmail === seller?.sellerEmail) {
+		return res.send({ message: "You can't order your product" })
+	}
+	const alreadyOrder = await ordersCollections.findOne(query)
+	if (alreadyOrder) {
+		return res.send({ message: 'Sorry this product is out of stock' })
+	}
+	const result = await ordersCollections.insertOne(order)
+	res.send(result)
+})
+
 app.get('/orders/:email', verifyJWT, async (req, res) => {
 	const email = req.params.email
 	const query = { buyerEmail: email }
