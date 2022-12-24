@@ -146,8 +146,28 @@ app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
 	const result = await usersCollections.deleteOne(query)
 	res.send(result)
 })
-
 // =============  All User API (Stop here)  ====================]
+                       // ------- //
+
+
+// [ =============  All Order API (Start here)  ==================
+app.get('/orders/:email', verifyJWT, async (req, res) => {
+	const email = req.params.email
+	const query = { buyerEmail: email }
+	const result = await ordersCollections.find(query).toArray()
+	res.send(result)
+})
+
+app.delete('/orders/:id', verifyJWT, async (req, res) => {
+	const { id } = req.params
+	const query = { _id: ObjectId(id) }
+	const result = await ordersCollections.deleteOne(query)
+	res.send(result)
+})
+// =============  All Order API (Stop here)  ====================]
+                            // ------- //
+
+
 
 
 // [ =============  All B API (Start here)  ==================
