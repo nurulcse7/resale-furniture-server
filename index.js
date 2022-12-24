@@ -27,9 +27,11 @@ const client = new MongoClient(uri, {
 
 async function run() {
 	const furnitureCollections = client.db('furnitureCollection').collection('furnitures')
+	const usersCollections = client.db('furnitureCollection').collection('users')
+	const ordersCollections = client.db('furnitureCollection').collection('orders')
 
 
-	// ============  All furniture API (Start here)  ====================
+	// [============  All furniture API (Start here)  ====================
 	app.post('/furnitures', async (req, res) => {
 		const product = req.body
 		const result = await furnitureCollections.insertOne(product)
@@ -67,19 +69,48 @@ async function run() {
 		const result = await furnitureCollections.deleteOne(query)
 		res.send(result)
 	})
-	
-
-	// ============  All furniture API (Stop here)  ====================
-
-
-	// =============  All Categories API (Start here)  ====================
+	// ============  All furniture API (Stop here)  ====================]
+                          // ------- //
+                           
+	// [ =============  All Categories API (Start here)  ==================
 	app.get('/categories', async (req, res) => {
 		const query = {}
 		const result = await furnitureCollections.find(query).toArray()
 		res.send(result)
 	})
-	// =============  All Categories API (Stop here)  ====================
+	app.get('/categoriesProducts/:id', async (req, res) => {
+		const { id } = req.params
+		const query = { categoryName: id }
+		const result = await furnitureCollections.find(query).toArray()
+		res.send(result)
+	})
+	// =============  All Categories API (Stop here)  ====================]
+                            // ------- //
 
+// [ =============  All User API (Start here)  ==================
+app.post('/users', async (req, res) => {
+	const user = req.body
+	const query = { email: user.email }
+	const alreadyUser = await usersCollections.findOne(query)
+	if (alreadyUser) {
+		return res.send({ acknowledged: true })
+	}
+	const result = await usersCollections.insertOne(user)
+	res.send(result)
+})
+app.post('/reports', async (req, res) => {
+	const report = req.body
+	const result = await reportsCollections.insertOne(report)
+	res.send(result)
+})
+
+// =============  All User API (Stop here)  ====================]
+
+
+// [ =============  All B API (Start here)  ==================
+
+// =============  All B API (Stop here)  ====================]
+                            // ------- //
 
 }
 run().catch(err => {
