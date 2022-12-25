@@ -350,6 +350,7 @@ async function run() {
 			res.send(result)
 		})
 		//   here is delete method ends
+		
 	} finally {
 		err => {
 			console.log(err);
